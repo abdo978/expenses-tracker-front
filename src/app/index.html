@@ -1,0 +1,467 @@
+<div>
+    <!-- Top Row - Key Metrics -->
+    <div class="mb-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <!-- Total Monthly Expenses -->
+        <div class="panel h-full">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center">
+                    <div class="grid h-11 w-11 place-content-center rounded-xl bg-danger/10 text-danger dark:bg-danger dark:text-danger-light ltr:mr-3 rtl:ml-3">
+                        <!-- <icon-credit-card class="h-5 w-5" /> -->
+                        <icon-minus class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h5 class="text-lg font-semibold dark:text-white-light">Monthly Expenses</h5>
+                        <p class="text-2xl font-bold text-danger">{{ formatCurrency(stats.monthlyExpenses) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-hidden">
+                <apx-chart
+                    [series]="totalExpensesChart.series"
+                    [chart]="totalExpensesChart.chart"
+                    [stroke]="totalExpensesChart.stroke"
+                    [colors]="totalExpensesChart.colors"
+                    class="rounded-lg bg-white dark:bg-black"
+                >
+                    <div class="grid min-h-[58px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+            </div>
+        </div>
+
+        <!-- Budget Remaining -->
+        <div class="panel h-full">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center">
+                    <div class="grid h-11 w-11 place-content-center rounded-xl bg-success/10 text-success dark:bg-success dark:text-success-light ltr:mr-3 rtl:ml-3">
+                        <!-- <icon-wallet class="h-5 w-5" /> -->
+                         <icon-minus class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h5 class="text-lg font-semibold dark:text-white-light">Budget Remaining</h5>
+                        <p class="text-2xl font-bold text-success">{{ formatCurrency(stats.budgetRemaining) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-sm text-white-dark">
+                <div class="flex items-center justify-between mb-2">
+                    <span>Budget Used</span>
+                    <span>{{ (100 - stats.savingsRate).toFixed(1) }}%</span>
+                </div>
+                <div class="h-2 rounded-full bg-dark-light shadow dark:bg-[#1b2e4b]">
+                    <div class="h-full rounded-full bg-gradient-to-r from-[#3cba92] to-[#0ba360]" 
+                         [style.width.%]="100 - stats.savingsRate"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Daily Spending -->
+        <div class="panel h-full">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center">
+                    <div class="grid h-11 w-11 place-content-center rounded-xl bg-warning/10 text-warning dark:bg-warning dark:text-warning-light ltr:mr-3 rtl:ml-3">
+                        <icon-calendar class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h5 class="text-lg font-semibold dark:text-white-light">Daily Average</h5>
+                        <p class="text-2xl font-bold text-warning">{{ formatCurrency(stats.avgDailySpending) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-hidden">
+                <apx-chart
+                    [series]="monthlyGrowthChart.series"
+                    [chart]="monthlyGrowthChart.chart"
+                    [stroke]="monthlyGrowthChart.stroke"
+                    [colors]="monthlyGrowthChart.colors"
+                    class="rounded-lg bg-white dark:bg-black"
+                >
+                    <div class="grid min-h-[58px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+            </div>
+        </div>
+
+        <!-- Savings Rate -->
+        <div class="panel h-full">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center">
+                    <div class="grid h-11 w-11 place-content-center rounded-xl bg-primary/10 text-primary dark:bg-primary dark:text-primary-light ltr:mr-3 rtl:ml-3">
+                        <!-- <icon-trending-up class="h-5 w-5" /> -->
+                        <icon-minus class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h5 class="text-lg font-semibold dark:text-white-light">Savings Rate</h5>
+                        <p class="text-2xl font-bold text-primary">{{ stats.savingsRate.toFixed(1) }}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-hidden">
+                <apx-chart
+                    [series]="savingsChart.series"
+                    [chart]="savingsChart.chart"
+                    [stroke]="savingsChart.stroke"
+                    [colors]="savingsChart.colors"
+                    class="rounded-lg bg-white dark:bg-black"
+                >
+                    <div class="grid min-h-[58px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Charts Row -->
+    <div class="mb-6 grid gap-6 xl:grid-cols-3">
+        <!-- Expense Trend Chart -->
+        <div class="panel h-full xl:col-span-2">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Expense Trends</h5>
+                <div class="dropdown ltr:ml-auto rtl:mr-auto">
+                    <div hlMenu>
+                        <a hlMenuButton href="javascript:;" class="align-middle">
+                            <icon-horizontal-dots class="text-black/70 hover:!text-primary dark:text-white/70" />
+                        </a>
+                        <ul *hlMenuItems @toggleAnimation class="ltr:right-0 rtl:left-0">
+                            <li><a href="javascript:;" *hlMenuItem="let menuItem" (click)="onPeriodChange('weekly')">Weekly</a></li>
+                            <li><a href="javascript:;" *hlMenuItem="let menuItem" (click)="onPeriodChange('monthly')">Monthly</a></li>
+                            <li><a href="javascript:;" *hlMenuItem="let menuItem" (click)="onPeriodChange('yearly')">Yearly</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <p class="text-lg dark:text-white-light/90">
+                Last 6 Months <span class="ml-2 text-primary">{{ formatCurrency(stats.totalExpenses) }}</span>
+            </p>
+            <div class="relative overflow-hidden">
+                <apx-chart
+                    [series]="expensesTrendChart.series"
+                    [chart]="expensesTrendChart.chart"
+                    [dataLabels]="expensesTrendChart.dataLabels"
+                    [stroke]="expensesTrendChart.stroke"
+                    [colors]="expensesTrendChart.colors"
+                    [labels]="expensesTrendChart.labels"
+                    [fill]="expensesTrendChart.fill"
+                    [grid]="expensesTrendChart.grid"
+                    [yaxis]="expensesTrendChart.yaxis"
+                    class="rounded-lg bg-white dark:bg-black"
+                >
+                    <div class="grid min-h-[325px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+            </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="panel h-full">
+            <div class="mb-5 flex items-center justify-between">
+                <h5 class="text-lg font-semibold dark:text-white-light">Expenses by Category</h5>
+                <button (click)="viewAllExpenses()" class="text-primary hover:text-primary/80">
+                    <icon-eye class="h-4 w-4" />
+                </button>
+            </div>
+            <div class="overflow-hidden">
+                <apx-chart
+                    [series]="categoryBreakdownChart.series"
+                    [chart]="categoryBreakdownChart.chart"
+                    [dataLabels]="categoryBreakdownChart.dataLabels"
+                    [stroke]="categoryBreakdownChart.stroke"
+                    [colors]="categoryBreakdownChart.colors"
+                    [legend]="categoryBreakdownChart.legend"
+                    [plotOptions]="categoryBreakdownChart.plotOptions"
+                    [labels]="categoryBreakdownChart.labels"
+                    class="rounded-lg bg-white dark:bg-black"
+                    *ngIf="categoryExpenses.length > 0"
+                >
+                    <div class="grid min-h-[400px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+                <div class="text-center py-8" *ngIf="categoryExpenses.length === 0 && !isLoading">
+                    <icon-inbox class="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p class="text-gray-500">No expense data available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget vs Actual & Recent Activity -->
+    <div class="mb-6 grid gap-6 lg:grid-cols-2">
+        <!-- Budget vs Actual -->
+        <div class="panel h-full">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Budget vs Actual</h5>
+                <button (click)="viewBudgets()" class="text-primary hover:text-primary/80">
+                    <icon-settings class="h-4 w-4" />
+                </button>
+            </div>
+            <div class="overflow-hidden">
+                <apx-chart
+                    [series]="budgetVsActualChart.series"
+                    [chart]="budgetVsActualChart.chart"
+                    [plotOptions]="budgetVsActualChart.plotOptions"
+                    [dataLabels]="budgetVsActualChart.dataLabels"
+                    [colors]="budgetVsActualChart.colors"
+                    [xaxis]="budgetVsActualChart.xaxis"
+                    [yaxis]="budgetVsActualChart.yaxis"
+                    class="rounded-lg bg-white dark:bg-black"
+                    *ngIf="budgetProgress.length > 0"
+                >
+                    <div class="grid min-h-[350px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]" *ngIf="isLoading">
+                        <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+                    </div>
+                </apx-chart>
+                <div class="text-center py-8" *ngIf="budgetProgress.length === 0 && !isLoading">
+                    <!-- <icon-chart-bar class="h-12 w-12 mx-auto text-gray-400 mb-4" /> -->
+                    <icon-minus class="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p class="text-gray-500 mb-2">No budgets set up yet</p>
+                    <button (click)="viewBudgets()" class="btn btn-primary btn-sm">Create Budget</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="panel h-full">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Recent Transactions</h5>
+                <div class="flex gap-2">
+                    <button (click)="addQuickExpense()" class="btn btn-primary btn-sm">
+                        <icon-plus class="h-4 w-4 ltr:mr-1 rtl:ml-1" />
+                        Add Expense
+                    </button>
+                    <button (click)="viewAllExpenses()" class="text-primary hover:text-primary/80">
+                        <!-- <icon-external-link class="h-4 w-4" /> -->
+                        <icon-minus class="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+            <ng-scrollbar class="relative !h-[320px] ltr:-mr-3 ltr:pr-3 rtl:-ml-3 rtl:pl-3">
+                <div class="space-y-4" *ngIf="recentExpenses.length > 0">
+                    <div class="flex items-center" *ngFor="let expense of recentExpenses">
+                        <div class="grid h-10 w-10 shrink-0 place-content-center rounded-lg text-white ltr:mr-3 rtl:ml-3"
+                             [style.background-color]="expense.category?.color || '#6b7280'">
+                            <span class="text-sm font-semibold">{{ (expense.category?.name || 'OT')[0] }}</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-sm">{{ expense.description || 'Expense' }}</div>
+                            <div class="text-xs text-white-dark">
+                                {{ expense.category?.name || 'Other' }} • {{ formatDate(expense.date) }}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-danger">-{{ formatCurrency(expense.amount) }}</div>
+                            <div class="text-xs text-white-dark" *ngIf="expense.isRecurring">
+                                <icon-refresh class="h-3 w-3 inline mr-1" />
+                                Recurring
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center py-8" *ngIf="recentExpenses.length === 0 && !isLoading">
+                    <!-- <icon-receipt class="h-12 w-12 mx-auto text-gray-400 mb-4" /> -->
+                    <icon-minus class="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p class="text-gray-500 mb-2">No recent transactions</p>
+                    <button (click)="addQuickExpense()" class="btn btn-primary btn-sm">Add Your First Expense</button>
+                </div>
+            </ng-scrollbar>
+        </div>
+    </div>
+
+    <!-- Category Progress & Quick Actions -->
+    <div class="mb-6 grid gap-6 lg:grid-cols-3">
+        <!-- Category Budget Progress -->
+        <div class="panel h-full lg:col-span-2">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Category Budget Progress</h5>
+                <button (click)="viewBudgets()" class="text-primary hover:text-primary/80 text-sm">View All</button>
+            </div>
+            <div class="space-y-4" *ngIf="budgetProgress.length > 0">
+                <div class="flex items-center" *ngFor="let budget of budgetProgress">
+                    <div class="flex items-center flex-1">
+                        <div class="w-16 text-sm font-semibold">{{ budget.categoryName }}</div>
+                        <div class="flex-1 mx-4">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>{{ formatCurrency(budget.spent) }} of {{ formatCurrency(budget.budgeted) }}</span>
+                                <span [class]="budget.percentage > 100 ? 'text-danger' : budget.percentage > 80 ? 'text-warning' : 'text-success'">
+                                    {{ budget.percentage.toFixed(0) }}%
+                                </span>
+                            </div>
+                            <div class="h-2 rounded-full bg-dark-light shadow dark:bg-[#1b2e4b]">
+                                <div class="h-full rounded-full transition-all"
+                                     [class]="budget.percentage > 100 ? 'bg-gradient-to-r from-[#ff5722] to-[#e74c3c]' : 
+                                             budget.percentage > 80 ? 'bg-gradient-to-r from-[#ff9800] to-[#f39c12]' : 
+                                             'bg-gradient-to-r from-[#4caf50] to-[#2e7d32]'"
+                                     [style.width.%]="budget.percentage > 100 ? 100 : budget.percentage"></div>
+                            </div>
+                        </div>
+                        <div class="text-right text-sm">
+                            <div [class]="budget.remaining >= 0 ? 'text-success' : 'text-danger'" class="font-semibold">
+                                {{ formatCurrency(budget.remaining >= 0 ? budget.remaining : -budget.remaining) }}
+                            </div>
+                            <div class="text-xs text-white-dark">{{ budget.remaining >= 0 ? 'left' : 'over' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center py-8" *ngIf="budgetProgress.length === 0 && !isLoading">
+                <!-- <icon-target class="h-12 w-12 mx-auto text-gray-400 mb-4" /> -->
+                <p class="text-gray-500 mb-2">No budget categories set up</p>
+                <button (click)="viewBudgets()" class="btn btn-primary btn-sm">Set Up Budgets</button>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Summary -->
+        <div class="panel h-full">
+            <div class="mb-5">
+                <h5 class="text-lg font-semibold dark:text-white-light">Quick Actions</h5>
+            </div>
+            <div class="space-y-4">
+                <!-- Quick Add Expense -->
+                <button (click)="addQuickExpense()" 
+                        class="w-full p-4 rounded-lg border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all group">
+                    <div class="flex items-center">
+                        <div class="grid h-10 w-10 place-content-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                            <icon-plus class="h-5 w-5" />
+                        </div>
+                        <div class="text-left ltr:ml-3 rtl:mr-3">
+                            <div class="font-semibold">Add Expense</div>
+                            <div class="text-xs text-white-dark">Quick expense entry</div>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- View Reports -->
+                <button (click)="viewAllExpenses()" 
+                        class="w-full p-4 rounded-lg border border-white-light dark:border-[#1b2e4b] hover:border-primary/60 hover:bg-primary/5 transition-all group">
+                    <div class="flex items-center">
+                        <div class="grid h-10 w-10 place-content-center rounded-lg bg-info/10 text-info group-hover:bg-info group-hover:text-white transition-all">
+                            <!-- <icon-chart-line class="h-5 w-5" /> -->
+                        </div>
+                        <div class="text-left ltr:ml-3 rtl:mr-3">
+                            <div class="font-semibold">View Reports</div>
+                            <div class="text-xs text-white-dark">Detailed analytics</div>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Manage Budgets -->
+                <button (click)="viewBudgets()" 
+                        class="w-full p-4 rounded-lg border border-white-light dark:border-[#1b2e4b] hover:border-primary/60 hover:bg-primary/5 transition-all group">
+                    <div class="flex items-center">
+                        <div class="grid h-10 w-10 place-content-center rounded-lg bg-warning/10 text-warning group-hover:bg-warning group-hover:text-white transition-all">
+                            <!-- <icon-calculator class="h-5 w-5" /> -->
+                        </div>
+                        <div class="text-left ltr:ml-3 rtl:mr-3">
+                            <div class="font-semibold">Manage Budgets</div>
+                            <div class="text-xs text-white-dark">Set spending limits</div>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- Financial Goals -->
+                <button (click)="viewGoals()" 
+                        class="w-full p-4 rounded-lg border border-white-light dark:border-[#1b2e4b] hover:border-primary/60 hover:bg-primary/5 transition-all group">
+                    <div class="flex items-center">
+                        <div class="grid h-10 w-10 place-content-center rounded-lg bg-success/10 text-success group-hover:bg-success group-hover:text-white transition-all">
+                            <!-- <icon-flag class="h-5 w-5" /> -->
+                        </div>
+                        <div class="text-left ltr:ml-3 rtl:mr-3">
+                            <div class="font-semibold">Financial Goals</div>
+                            <div class="text-xs text-white-dark">Track your progress</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- This Month Summary -->
+            <div class="mt-6 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+                <div class="text-center">
+                    <h6 class="font-semibold mb-2">This Month Summary</h6>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-white-dark">Expenses</div>
+                            <div class="font-semibold text-danger">{{ formatCurrency(stats.monthlyExpenses) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-white-dark">Remaining</div>
+                            <div class="font-semibold text-success">{{ formatCurrency(stats.budgetRemaining) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-white-dark">Top Category</div>
+                            <div class="font-semibold truncate">{{ stats.topCategory }}</div>
+                        </div>
+                        <div>
+                            <div class="text-white-dark">Savings Rate</div>
+                            <div class="font-semibold text-primary">{{ stats.savingsRate.toFixed(1) }}%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Recurring Expenses -->
+    <div class="mb-6 grid gap-6 lg:grid-cols-2" *ngIf="upcomingRecurring.length > 0">
+        <div class="panel h-full">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Upcoming Recurring Expenses</h5>
+                <!-- <icon-refresh class="h-4 w-4 text-primary" /> -->
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-[#1a1a1a]" 
+                     *ngFor="let expense of upcomingRecurring">
+                    <div class="flex items-center">
+                        <div class="grid h-8 w-8 place-content-center rounded-lg text-white text-xs font-semibold ltr:mr-3 rtl:ml-3"
+                             [style.background-color]="expense.category?.color || '#6b7280'">
+                            {{ (expense.category?.name || 'OT')[0] }}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-sm">{{ expense.description || 'Recurring Expense' }}</div>
+                            <div class="text-xs text-white-dark">{{ expense.recurringFrequency }}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold text-danger">{{ formatCurrency(expense.amount) }}</div>
+                        <div class="text-xs text-white-dark" *ngIf="expense.nextRecurringDate">
+                            {{ formatDate(expense.nextRecurringDate) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Categories This Month -->
+        <div class="panel h-full">
+            <div class="mb-5 flex items-center justify-between dark:text-white-light">
+                <h5 class="text-lg font-semibold">Top Categories This Month</h5>
+                <button (click)="viewAllExpenses()" class="text-primary hover:text-primary/80">
+                    <!-- <icon-external-link class="h-4 w-4" /> -->
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between" *ngFor="let category of categoryExpenses.slice(0, 5)">
+                    <div class="flex items-center">
+                        <div class="h-4 w-4 rounded-full ltr:mr-3 rtl:ml-3" [style.background-color]="category.color"></div>
+                        <div>
+                            <div class="font-semibold text-sm">{{ category.categoryName }}</div>
+                            <div class="text-xs text-white-dark">{{ category.percentage.toFixed(1) }}% of total</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold">{{ formatCurrency(category.amount) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="text-center py-12" *ngIf="isLoading">
+        <div class="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-primary !border-l-transparent"></div>
+        <p class="mt-4 text-white-dark">Loading your expense data...</p>
+    </div>
+</div>
