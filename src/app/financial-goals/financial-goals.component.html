@@ -1,0 +1,364 @@
+<div>
+  <!-- Goal Overview Cards -->
+  <div class="mb-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="panel h-full">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-lg font-semibold text-primary dark:text-primary-light">{{ activeGoals }}</div>
+          <div class="text-xs text-white-dark">Active Goals</div>
+        </div>
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary dark:text-white-light">
+          <icon-minus />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel h-full">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-lg font-semibold text-success dark:text-success-light">{{ totalTargetAmount | currency:'USD':'symbol':'1.0-0' }}</div>
+          <div class="text-xs text-white-dark">Total Target</div>
+        </div>
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-success/10 text-success dark:bg-success dark:text-white-light">
+          <icon-trending-up />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel h-full">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-lg font-semibold text-info dark:text-info-light">{{ totalSaved | currency:'USD':'symbol':'1.0-0' }}</div>
+          <div class="text-xs text-white-dark">Total Saved</div>
+        </div>
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-info/10 text-info dark:bg-info dark:text-white-light">
+          <icon-minus />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel h-full">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-lg font-semibold text-warning dark:text-warning-light">{{ completedGoals }}</div>
+          <div class="text-xs text-white-dark">Completed</div>
+        </div>
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-warning/10 text-warning dark:bg-warning dark:text-white-light">
+          <icon-checks />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goals Progress and Performance Charts -->
+  <div class="mb-6 grid gap-6 lg:grid-cols-3">
+    <div class="panel h-full lg:col-span-2">
+      <div class="mb-5 flex items-center justify-between dark:text-white-light">
+        <h5 class="text-lg font-semibold">Goal Progress Timeline</h5>
+      </div>
+      <div class="overflow-hidden">
+        <apx-chart
+          [series]="goalProgressChart?.series || []"
+          [chart]="goalProgressChart?.chart"
+          [dataLabels]="goalProgressChart?.dataLabels"
+          [stroke]="goalProgressChart?.stroke"
+          [colors]="goalProgressChart?.colors"
+          [xaxis]="goalProgressChart?.xaxis"
+          [yaxis]="goalProgressChart?.yaxis"
+          [grid]="goalProgressChart?.grid"
+          [legend]="goalProgressChart?.legend"
+          [tooltip]="goalProgressChart?.tooltip"
+          [fill]="goalProgressChart?.fill"
+          class="rounded-lg bg-white dark:bg-black"
+        >
+          <div class="grid min-h-[300px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
+        </apx-chart>
+      </div>
+    </div>
+
+    <div class="panel h-full">
+      <div class="mb-5 flex items-center justify-between">
+        <h5 class="text-lg font-semibold dark:text-white-light">Goal Status</h5>
+      </div>
+      <div class="overflow-hidden">
+        <apx-chart
+          [series]="goalStatusChart?.series || []"
+          [chart]="goalStatusChart?.chart"
+          [plotOptions]="goalStatusChart?.plotOptions"
+          [labels]="goalStatusChart?.labels"
+          [colors]="goalStatusChart?.colors"
+          [legend]="goalStatusChart?.legend"
+          [dataLabels]="goalStatusChart?.dataLabels"
+          class="rounded-lg bg-white dark:bg-black"
+        >
+          <div class="grid min-h-[300px] place-content-center bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08]">
+            <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+          </div>
+        </apx-chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Goal Progress Cards -->
+  <div class="mb-6 panel">
+    <div class="mb-5 flex items-center justify-between">
+      <h5 class="text-lg font-semibold dark:text-white-light">Goal Progress Highlights</h5>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div *ngFor="let goal of goalHighlights" class="rounded-lg border border-[#e0e6ed] p-4 dark:border-[#1b2e4b]">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="text-lg">{{ getGoalIcon(goal.name) }}</div>
+            <span class="font-semibold">{{ goal.name }}</span>
+          </div>
+          <span class="text-xs" [ngClass]="goal.percentage >= 100 ? 'text-success' : goal.percentage >= 75 ? 'text-info' : goal.percentage >= 50 ? 'text-warning' : 'text-danger'">
+            {{ goal.percentage }}%
+          </span>
+        </div>
+        <div class="mb-2 flex justify-between text-sm">
+          <span>{{ goal.currentAmount | currency:'USD':'symbol':'1.0-0' }} / {{ goal.targetAmount | currency:'USD':'symbol':'1.0-0' }}</span>
+          <span [ngClass]="goal.daysLeft >= 0 ? 'text-info' : 'text-danger'">
+            {{ goal.daysLeft >= 0 ? goal.daysLeft + 'd left' : 'Overdue' }}
+          </span>
+        </div>
+        <div class="h-2 w-full overflow-hidden rounded-full bg-dark-light shadow-sm dark:bg-dark-light/10">
+          <div 
+            class="h-full rounded-full transition-all duration-300"
+            [ngClass]="goal.percentage >= 100 ? 'bg-gradient-to-r from-success to-success' : goal.percentage >= 75 ? 'bg-gradient-to-r from-info to-info' : goal.percentage >= 50 ? 'bg-gradient-to-r from-warning to-warning' : 'bg-gradient-to-r from-danger to-danger'"
+            [style.width.%]="Math.min(goal.percentage, 100)"
+          ></div>
+        </div>
+        <div class="mt-2 text-xs text-white-dark">
+          Target: {{ goal.targetDate | date: 'MMM dd, yyyy' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="panel">
+    <div class="mb-5 flex items-center justify-between">
+      <h5 class="text-lg font-semibold dark:text-white-light">Filter Goals</h5>
+    </div>
+    <div class="mb-5">
+      <div class="mb-5 flex flex-wrap gap-2">
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          class="form-input flex-1 min-w-[200px] sm:min-w-0" 
+          placeholder="Search by name or description"
+        />
+
+        <ng-select 
+          [items]="statusOptions" 
+          [(ngModel)]="selectedStatus" 
+          bindLabel="label" 
+          bindValue="value"
+          [searchable]="false" 
+          [clearable]="true" 
+          class="custom-multiselect flex-1 min-w-[200px] sm:min-w-0" 
+          placeholder="Goal Status"
+        ></ng-select>
+
+        <input type="text" mwlFlatpickr [options]="dateRangeCalendar" [(ngModel)]="dateRange" class="form-input flex-1 min-w-[200px] sm:min-w-0" placeholder="Target Date Range"/>
+
+        <input type="number" [(ngModel)]="minAmount" class="form-input flex-1 min-w-[150px] sm:min-w-0" placeholder="Min Target"/>
+        <input type="number" [(ngModel)]="maxAmount" class="form-input flex-1 min-w-[150px] sm:min-w-0" placeholder="Max Target"/>
+      </div>
+
+      <div class="mb-5 flex flex-wrap gap-2">
+        <button type="button" (click)="resetFilters()" class="btn btn-secondary mt-6 w-full md:w-auto">
+          <icon-refresh class="ltr:mr-2 rtl:ml-2" /> Reset
+        </button>
+        <button type="button" (click)="applyFilters()" class="btn btn-primary mt-6 w-full md:w-auto">
+          <icon-search class="ltr:mr-2 rtl:ml-2" /> Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Goals List -->
+  <div class="panel mt-6 pb-0">
+    <div class="mb-5 flex flex-col gap-5 md:flex-row md:items-center">
+      <h5 class="text-lg font-semibold dark:text-white-light">Financial Goals Management</h5>
+      <div class="ltr:ml-auto rtl:mr-auto">
+        <button type="button" (click)="openAddModal()" class="btn btn-primary mt-6 w-full md:w-auto">
+          <icon-plus-circle class="ltr:mr-2 rtl:ml-2" /> Create Goal
+        </button>
+      </div>
+    </div>
+
+    <div class="datatable">
+      <ng-datatable
+        [rows]="financialGoals"
+        [columns]="cols"
+        [sortable]="true"
+        [loading]="loading"
+        [totalRows]="totalRows"
+        [isServerMode]="true"
+        [showPageSize]="true"
+        [pageSizeOptions]="[10, 20, 50]"
+        [pagination]="true"
+        [pageSize]="recordsPerPage"
+        [page]="currentPage"
+        [noDataContent]="'No financial goals found'"
+        [paginationInfo]="'Showing ' + ((currentPage - 1) * recordsPerPage + 1) + ' to ' + (currentPage * recordsPerPage) + ' of ' + totalRows + ' entries'"
+        (changeServer)="onPageChange($event)"
+        skin="whitespace-nowrap bh-table-hover"
+        firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+        lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg> '
+        previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+        nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+      >
+        <ng-template slot="name" let-value="data">
+          <div class="flex items-center gap-2">
+            <div class="text-lg">{{ getGoalIcon(value.name) }}</div>
+            <div>
+              <div class="font-semibold">{{ value.name || 'Unnamed Goal' }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ value.description || 'No description' }}</div>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template slot="target" let-value="data">
+          <div class="font-semibold text-primary">{{ value.targetAmount | currency:'USD':'symbol':'1.2-2' }}</div>
+        </ng-template>
+
+        <ng-template slot="current" let-value="data">
+          <div class="font-semibold text-success">{{ value.currentAmount | currency:'USD':'symbol':'1.2-2' }}</div>
+        </ng-template>
+
+        <ng-template slot="progress" let-value="data">
+          <div class="w-full">
+            <div class="mb-1 flex justify-between text-xs">
+              <span>{{ value.percentage }}%</span>
+              <span [ngClass]="value.remaining >= 0 ? 'text-info' : 'text-success'">
+                {{ value.remaining >= 0 ? (value.remaining | currency:'USD':'symbol':'1.0-0') + ' to go' : 'Goal Achieved!' }}
+              </span>
+            </div>
+            <div class="h-2 w-full overflow-hidden rounded-full bg-dark-light shadow-sm dark:bg-dark-light/10">
+              <div 
+                class="h-full rounded-full transition-all duration-300"
+                [ngClass]="value.percentage >= 100 ? 'bg-gradient-to-r from-success to-success' : value.percentage >= 75 ? 'bg-gradient-to-r from-info to-info' : value.percentage >= 50 ? 'bg-gradient-to-r from-warning to-warning' : 'bg-gradient-to-r from-danger to-danger'"
+                [style.width.%]="Math.min(value.percentage, 100)"
+              ></div>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template slot="timeline" let-value="data">
+          <div class="text-center">
+            <div class="font-semibold">{{ value.startDate | date: 'MMM dd' }} - {{ value.targetDate | date: 'MMM dd, yyyy' }}</div>
+            <div class="text-xs" [ngClass]="value.daysLeft >= 0 ? 'text-info' : 'text-danger'">
+              {{ value.daysLeft >= 0 ? value.daysLeft + ' days left' : 'Overdue by ' + Math.abs(value.daysLeft) + ' days' }}
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template slot="status" let-value="data">
+          <span class="badge" [ngClass]="getGoalStatusClass(value)">
+            {{ getGoalStatusText(value) }}
+          </span>
+        </ng-template>
+
+        <ng-template slot="actions" let-value="data">
+          <div class="flex gap-2">
+            <button type="button" (click)="addContribution(value)" class="btn btn-success w-8 h-8 p-0 rounded-full" title="Add Contribution">
+              <icon-plus class="h-4 w-4" />
+            </button>
+            <button type="button" (click)="editGoal(value)" class="btn btn-info w-8 h-8 p-0 rounded-full">
+              <icon-edit class="h-4 w-4" />
+            </button>
+            <button type="button" (click)="deleteGoal(value.id)" class="btn btn-danger w-8 h-8 p-0 rounded-full">
+              <icon-trash class="h-4 w-4" />
+            </button>
+          </div>
+        </ng-template>
+      </ng-datatable>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Goal Modal -->
+<ngx-custom-modal #goalModal class="no-footer">
+  <ng-template #modalHeader>
+    <div class="!font-medium">{{ isEditing ? 'Edit' : 'Create' }} Financial Goal</div>
+  </ng-template>
+  <ng-template #modalBody>
+    <form [formGroup]="goalForm" class="text-sm" (submit)="saveGoal()">
+      <div class="mb-5">
+        <label for="name">Goal Name *</label>
+        <input type="text" formControlName="name" class="form-input" placeholder="e.g., Emergency Fund, Vacation, New Car"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="description">Description</label>
+        <textarea formControlName="description" class="form-textarea" placeholder="Describe your financial goal" rows="2"></textarea>
+      </div>
+
+      <div class="mb-5">
+        <label for="targetAmount">Target Amount *</label>
+        <input type="number" formControlName="targetAmount" class="form-input" placeholder="Enter target amount" step="0.01"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="startDate">Start Date *</label>
+        <input type="text" mwlFlatpickr [options]="singleDateCalendar" formControlName="startDate" class="form-input" placeholder="Select start date"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="targetDate">Target Date *</label>
+        <input type="text" mwlFlatpickr [options]="singleDateCalendar" formControlName="targetDate" class="form-input" placeholder="Select target date"/>
+      </div>
+
+      <div class="mt-8 flex items-center justify-end ltr:text-right rtl:text-left">
+        <button type="button" class="btn btn-outline-danger" (click)="goalModal.close()">Cancel</button>
+        <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4" [disabled]="goalForm.invalid">
+          {{ isEditing ? 'Update' : 'Create' }}
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</ngx-custom-modal>
+
+<!-- Add Contribution Modal -->
+<ngx-custom-modal #contributionModal class="no-footer">
+  <ng-template #modalHeader>
+    <div class="!font-medium">Add Contribution to {{ selectedGoal?.name }}</div>
+  </ng-template>
+  <ng-template #modalBody>
+    <form [formGroup]="contributionForm" class="text-sm" (submit)="saveContribution()">
+      <div class="mb-5">
+        <div class="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div class="text-sm text-gray-600 dark:text-gray-400">Current Progress</div>
+          <div class="text-lg font-semibold">{{ selectedGoal?.currentAmount | currency:'USD':'symbol':'1.0-0' }} / {{ selectedGoal?.targetAmount | currency:'USD':'symbol':'1.0-0' }}</div>
+          <div class="text-sm text-primary">{{ selectedGoal?.percentage }}% Complete</div>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label for="amount">Contribution Amount *</label>
+        <input type="number" formControlName="amount" class="form-input" placeholder="Enter contribution amount" step="0.01"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="date">Date *</label>
+        <input type="text" mwlFlatpickr [options]="singleDateCalendar" formControlName="date" class="form-input" placeholder="Select date"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="notes">Notes</label>
+        <textarea formControlName="notes" class="form-textarea" placeholder="Optional notes about this contribution" rows="2"></textarea>
+      </div>
+
+      <div class="mt-8 flex items-center justify-end ltr:text-right rtl:text-left">
+        <button type="button" class="btn btn-outline-danger" (click)="contributionModal.close()">Cancel</button>
+        <button type="submit" class="btn btn-success ltr:ml-4 rtl:mr-4" [disabled]="contributionForm.invalid">
+          Add Contribution
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</ngx-custom-modal>

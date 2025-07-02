@@ -1,44 +1,79 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { NgxCustomModalComponent } from 'ngx-custom-modal';
+import { FullCalendarComponent } from '@fullcalendar/angular';
 import { toggleAnimation } from 'src/app/shared/animations';
 import Swal from 'sweetalert2';
-import { NgxCustomModalComponent } from 'ngx-custom-modal';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+// Plugins
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { FullCalendarComponent } from '@fullcalendar/angular';
-import { Store } from '@ngrx/store';
+
+// Services
+import { ExpenseService, CreateExpenseCommand, UpdateExpenseCommand } from '../service/expense.service';
+import { CategoryService, CategoryDto } from '../service/category.service';
+import { BudgetService } from '../service/budget.service';
+import { FinancialGoalService } from '../service/financialGoal.service';
+import { AuthService } from '../service/auth/auth.service';
+import { AlertService } from '../service/alerts.service';
 
 @Component({
     templateUrl: './calendar.html',
     animations: [toggleAnimation],
 })
-export class CalendarComponent {
+export class CalendarComponent implements OnInit {
     store: any;
     isLoading = true;
-    @ViewChild('isAddEventModal') isAddEventModal!: NgxCustomModalComponent;
-    @ViewChild('calendar') calendar!: FullCalendarComponent;
-    defaultParams = {
-        id: null,
-        title: '',
-        start: '',
-        end: '',
-        description: '',
-        type: 'primary',
-    };
-    params!: FormGroup;
-    minStartDate: any = '';
-    minEndDate: any = '';
 
-    events: any = [];
+    @ViewChild('quickExpenseModal') quickExpenseModal!: NgxCustomModalComponent;
+    @ViewChild('eventDetailsModal') eventDetailsModal!: NgxCustomModalComponent;
+    @ViewChild('calendar') calendar!: FullCalendarComponent;
+
+    // Forms
+    expenseForm!: FormGroup;
+
+    // Data
+    events: any[] = [];
+    categories: CategoryDto[] = [];
+    expenses: any[] = [];
+    budgets: any[] = [];
+    financialGoals: any[] = [];
+    selectedEvent: any = null;
+
+    // Calendar options
     calendarOptions: any;
+    minDate: string = '';
+
+    // Options
+    frequencyOptions = [
+        { label: 'Daily', value: 'daily' },
+        { label: 'Weekly', value: 'weekly' },
+        { label: 'Monthly', value: 'monthly' },
+        { label: 'Yearly', value: 'yearly' }
+    ];
+
     constructor(
         public fb: FormBuilder,
         public storeData: Store<any>,
+        private expenseService: ExpenseService,
+        private categoryService: CategoryService,
+        private budgetService: BudgetService,
+        private financialGoalService: FinancialGoalService,
+        private authService: AuthService,
+        private alertService: AlertService
     ) {
         this.initStore();
+        this.initForm();
         this.isLoading = false;
     }
+
+    ngOnInit() {
+        this.loadData();
+        this.setMinDate();
+    }
+
     async initStore() {
         this.storeData
             .select((d: any) => d.index)
@@ -52,7 +87,6 @@ export class CalendarComponent {
                 if (hasChangeLayout || hasChangeMenu || hasChangeSidebar) {
                     if (this.isLoading) {
                         this.initCalendar();
-                        this.calendarOptions.events = [];
                     } else {
                         setTimeout(() => {
                             this.initCalendar();
@@ -71,238 +105,416 @@ export class CalendarComponent {
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay',
             },
-            editable: true,
-            dayMaxEvents: true,
+            editable: false,
+            dayMaxEvents: 3,
             selectable: true,
-            droppable: true,
+            droppable: false,
             eventClick: (event: any) => {
-                this.editEvent(event);
+                this.showEventDetails(event);
             },
             select: (event: any) => {
-                this.editDate(event);
+                this.addExpenseForDate(event);
             },
+            events: this.events,
+            height: 'auto',
+            eventDisplay: 'block',
+            displayEventTime: true,
         };
-    }
-
-    ngOnInit() {
-        this.getEvents();
     }
 
     initForm() {
-        this.params = this.fb.group({
-            id: null,
-            title: ['', Validators.required],
-            start: ['', Validators.required],
-            end: ['', Validators.required],
-            description: [''],
-            type: ['primary'],
+        this.expenseForm = this.fb.group({
+            description: ['', Validators.required],
+            amount: ['', [Validators.required, Validators.min(0.01)]],
+            categoryId: ['', Validators.required],
+            date: ['', Validators.required],
+            isRecurring: [false],
+            recurringFrequency: [''],
+            isShared: [false],
+            notes: ['']
+        });
+
+        // Watch for recurring changes
+        this.expenseForm.get('isRecurring')?.valueChanges.subscribe(isRecurring => {
+            const frequencyControl = this.expenseForm.get('recurringFrequency');
+            if (isRecurring) {
+                frequencyControl?.setValidators(Validators.required);
+                frequencyControl?.setValue('monthly');
+            } else {
+                frequencyControl?.clearValidators();
+                frequencyControl?.setValue('');
+            }
+            frequencyControl?.updateValueAndValidity();
         });
     }
 
-    getEvents() {
+    setMinDate() {
         const now = new Date();
-        this.events = [
-            {
-                id: 1,
-                title: 'All Day Event',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-01T14:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-02T14:30:00',
-                className: 'danger',
-                description: 'Aenean fermentum quam vel sapien rutrum cursus. Vestibulum imperdiet finibus odio, nec tincidunt felis facilisis eu.',
-            },
-            {
-                id: 2,
-                title: 'Site Visit',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-07T19:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-08T14:30:00',
-                className: 'primary',
-                description: 'Etiam a odio eget enim aliquet laoreet. Vivamus auctor nunc ultrices varius lobortis.',
-            },
-            {
-                id: 3,
-                title: 'Product Lunching Event',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-17T14:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-18T14:30:00',
-                className: 'info',
-                description: 'Proin et consectetur nibh. Mauris et mollis purus. Ut nec tincidunt lacus. Nam at rutrum justo, vitae egestas dolor.',
-            },
-            {
-                id: 4,
-                title: 'Meeting',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-12T10:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-13T10:30:00',
-                className: 'danger',
-                description: 'Mauris ut mauris aliquam, fringilla sapien et, dignissim nisl. Pellentesque ornare velit non mollis fringilla.',
-            },
-            {
-                id: 5,
-                title: 'Lunch',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-12T15:00:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-13T15:00:00',
-                className: 'info',
-                description: 'Integer fermentum bibendum elit in egestas. Interdum et malesuada fames ac ante ipsum primis in faucibus.',
-            },
-            {
-                id: 6,
-                title: 'Conference',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-12T21:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-13T21:30:00',
-                className: 'success',
-                description:
-                    'Curabitur facilisis vel elit sed dapibus. Nunc sagittis ex nec ante facilisis, sed sodales purus rhoncus. Donec est sapien, porttitor et feugiat sed, eleifend quis sapien. Sed sit amet maximus dolor.',
-            },
-            {
-                id: 7,
-                title: 'Happy Hour',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-12T05:30:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-13T05:30:00',
-                className: 'info',
-                description:
-                    ' odio lectus, porttitor molestie scelerisque blandit, hendrerit sed ex. Aenean malesuada iaculis erat, vitae blandit nisl accumsan ut.',
-            },
-            {
-                id: 8,
-                title: 'Dinner',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-12T20:00:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-13T20:00:00',
-                className: 'danger',
-                description:
-                    'Sed purus urna, aliquam et pharetra ut, efficitur id mi. Pellentesque ut convallis velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-            {
-                id: 9,
-                title: 'Birthday Party',
-                start: now.getFullYear() + '-' + this.getMonth(now) + '-27T20:00:00',
-                end: now.getFullYear() + '-' + this.getMonth(now) + '-28T20:00:00',
-                className: 'success',
-                description:
-                    'Sed purus urna, aliquam et pharetra ut, efficitur id mi. Pellentesque ut convallis velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-            {
-                id: 10,
-                title: 'New Talent Event',
-                start: now.getFullYear() + '-' + this.getMonth(now, 1) + '-24T08:12:14',
-                end: now.getFullYear() + '-' + this.getMonth(now, 1) + '-27T22:20:20',
-                className: 'danger',
-                description:
-                    'Sed purus urna, aliquam et pharetra ut, efficitur id mi. Pellentesque ut convallis velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-            {
-                id: 11,
-                title: 'Other new',
-                start: now.getFullYear() + '-' + this.getMonth(now, -1) + '-13T08:12:14',
-                end: now.getFullYear() + '-' + this.getMonth(now, -1) + '-16T22:20:20',
-                className: 'primary',
-                description:
-                    'Pellentesque ut convallis velit. Sed purus urna, aliquam et pharetra ut, efficitur id mi. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-            {
-                id: 13,
-                title: 'Upcoming Event',
-                start: now.getFullYear() + '-' + this.getMonth(now, 1) + '-15T08:12:14',
-                end: now.getFullYear() + '-' + this.getMonth(now, 1) + '-18T22:20:20',
-                className: 'primary',
-                description:
-                    'Pellentesque ut convallis velit. Sed purus urna, aliquam et pharetra ut, efficitur id mi. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            },
-        ];
-        this.calendarOptions.events = this.events;
+        this.minDate = now.toISOString().slice(0, 16);
     }
 
-    getMonth(dt: Date, add: number = 0) {
-        let month = dt.getMonth() + 1 + add;
-        const str = (month < 10 ? '0' + month : month).toString();
-        return str;
+    loadData() {
+        this.loadCategories();
+        this.loadExpenses();
+        this.loadBudgets();
+        this.loadFinancialGoals();
     }
 
-    editEvent(data: any = null) {
-        this.params = JSON.parse(JSON.stringify(this.defaultParams));
-        this.isAddEventModal.open();
-        this.initForm();
-        if (data) {
-            let obj = JSON.parse(JSON.stringify(data.event));
-            this.params.setValue({
-                id: obj.id ? obj.id : null,
-                title: obj.title ? obj.title : null,
-                start: this.dateFormat(obj.start),
-                end: this.dateFormat(obj.end),
-                type: obj.classNames ? obj.classNames[0] : 'primary',
-                description: obj.extendedProps ? obj.extendedProps.description : '',
-            });
-            this.minStartDate = new Date();
-            this.minEndDate = this.dateFormat(obj.start);
-        } else {
-            this.minStartDate = new Date();
-            this.minEndDate = new Date();
-        }
-    }
-
-    editDate(data: any) {
-        let obj = {
-            event: {
-                start: data.start,
-                end: data.end,
+    loadCategories() {
+        this.categoryService.getCategories().subscribe({
+            next: (response) => {
+                if (response.status === 200) {
+                    // Handle .NET response structure
+                    this.categories = response.data?.$values || response.data || [];
+                }
             },
-        };
-        this.editEvent(obj);
-    }
-
-    dateFormat(dt: any) {
-        dt = new Date(dt);
-        const month = dt.getMonth() + 1 < 10 ? '0' + (dt.getMonth() + 1) : dt.getMonth() + 1;
-        const date = dt.getDate() < 10 ? '0' + dt.getDate() : dt.getDate();
-        const hours = dt.getHours() < 10 ? '0' + dt.getHours() : dt.getHours();
-        const mins = dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes();
-        dt = dt.getFullYear() + '-' + month + '-' + date + 'T' + hours + ':' + mins;
-        return dt;
-    }
-
-    saveEvent() {
-        if (!this.params.value.title) {
-            return;
-        }
-        if (!this.params.value.start) {
-            return;
-        }
-        if (!this.params.value.end) {
-            return;
-        }
-
-        if (this.params.value.id) {
-            //update event
-            let event = this.events.find((d: any) => d.id == this.params.value.id);
-            event.title = this.params.value.title;
-            event.start = this.params.value.start;
-            event.end = this.params.value.end;
-            event.description = this.params.value.description;
-            event.className = this.params.value.type;
-        } else {
-            //add event
-            let maxEventId = 0;
-            if (this.events) {
-                maxEventId = this.events.reduce((max: number, character: any) => (character.id > max ? character.id : max), this.events[0].id);
+            error: (error) => {
+                console.error('Error loading categories:', error);
             }
-
-            let event = {
-                id: maxEventId + 1,
-                title: this.params.value.title,
-                start: this.params.value.start,
-                end: this.params.value.end,
-                description: this.params.value.description,
-                className: this.params.value.type,
-            };
-            this.events.push(event);
-        }
-        this.calendar.getApi(); //refresh Calendar
-        this.showMessage('Event has been saved successfully.');
-        this.isAddEventModal.close();
+        });
     }
 
-    startDateChange(event: any) {
-        const dateStr = event.target;
-        if (dateStr) {
-            this.minEndDate = this.dateFormat(dateStr);
-            this.params.patchValue({ end: '' });
+    loadExpenses() {
+        this.expenseService.getExpenses().subscribe({
+            next: (response) => {
+                if (response.status === 200) {
+                    // Handle .NET response structure
+                    this.expenses = response.data?.$values || response.data || [];
+                    this.processExpensesForCalendar();
+                }
+            },
+            error: (error) => {
+                console.error('Error loading expenses:', error);
+            }
+        });
+    }
+
+    loadBudgets() {
+        this.budgetService.getBudgets().subscribe({
+            next: (response) => {
+                if (response.status === 200) {
+                    // Handle .NET response structure
+                    this.budgets = response.data?.$values || response.data || [];
+                    this.processBudgetsForCalendar();
+                }
+            },
+            error: (error) => {
+                console.error('Error loading budgets:', error);
+            }
+        });
+    }
+
+    loadFinancialGoals() {
+        this.financialGoalService.getFinancialGoals().subscribe({
+            next: (response) => {
+                if (response.status === 200) {
+                    // Handle .NET response structure
+                    this.financialGoals = response.data?.$values || response.data || [];
+                    this.processGoalsForCalendar();
+                }
+            },
+            error: (error) => {
+                console.error('Error loading financial goals:', error);
+            }
+        });
+    }
+
+    processExpensesForCalendar() {
+        const expenseEvents = this.expenses.map(expense => ({
+            id: `expense-${expense.id}`,
+            title: expense.description || 'Expense',
+            start: expense.date,
+            backgroundColor: expense.isRecurring ? '#e74c3c' : '#3498db',
+            borderColor: expense.isRecurring ? '#c0392b' : '#2980b9',
+            extendedProps: {
+                type: 'expense',
+                originalId: expense.id,
+                amount: expense.amount,
+                category: expense.category,
+                isRecurring: expense.isRecurring,
+                recurringFrequency: expense.recurringFrequency,
+                isShared: expense.isShared,
+                notes: expense.notes
+            }
+        }));
+
+        this.updateEvents(expenseEvents, 'expense');
+    }
+
+    processBudgetsForCalendar() {
+        const budgetEvents: any[] = [];
+        
+        this.budgets.forEach(budget => {
+            // Add budget start event
+            budgetEvents.push({
+                id: `budget-start-${budget.id}`,
+                title: `Budget: ${budget.categoryName || 'Unknown'} (Start)`,
+                start: budget.startDate,
+                backgroundColor: '#27ae60',
+                borderColor: '#229954',
+                extendedProps: {
+                    type: 'budget',
+                    subType: 'start',
+                    originalId: budget.id,
+                    amount: budget.amount,
+                    category: budget.categoryName
+                }
+            });
+
+            // Add budget end event
+            budgetEvents.push({
+                id: `budget-end-${budget.id}`,
+                title: `Budget: ${budget.categoryName || 'Unknown'} (End)`,
+                start: budget.endDate,
+                backgroundColor: '#f39c12',
+                borderColor: '#e67e22',
+                extendedProps: {
+                    type: 'budget',
+                    subType: 'end',
+                    originalId: budget.id,
+                    amount: budget.amount,
+                    category: budget.categoryName
+                }
+            });
+        });
+
+        this.updateEvents(budgetEvents, 'budget');
+    }
+
+    processGoalsForCalendar() {
+        const goalEvents = this.financialGoals.map(goal => ({
+            id: `goal-${goal.id}`,
+            title: `Goal: ${goal.name} (Deadline)`,
+            start: goal.targetDate,
+            backgroundColor: '#f1c40f',
+            borderColor: '#f39c12',
+            extendedProps: {
+                type: 'goal',
+                originalId: goal.id,
+                amount: goal.targetAmount,
+                name: goal.name,
+                description: goal.description
+            }
+        }));
+
+        this.updateEvents(goalEvents, 'goal');
+    }
+
+    updateEvents(newEvents: any[], type: string) {
+        // Remove existing events of this type
+        this.events = this.events.filter(event => 
+            !event.extendedProps?.type || event.extendedProps.type !== type
+        );
+        
+        // Add new events
+        this.events.push(...newEvents);
+        
+        // Update calendar
+        if (this.calendarOptions) {
+            this.calendarOptions.events = [...this.events];
+        }
+    }
+
+    addQuickExpense() {
+        this.selectedEvent = null;
+        this.expenseForm.reset();
+        this.expenseForm.patchValue({
+            date: new Date().toISOString().slice(0, 16),
+            isRecurring: false,
+            isShared: false
+        });
+        
+        if (this.quickExpenseModal) {
+            this.quickExpenseModal.open();
+        }
+    }
+
+    addExpenseForDate(dateInfo: any) {
+        this.selectedEvent = null;
+        this.expenseForm.reset();
+        
+        const selectedDate = new Date(dateInfo.start);
+        const formattedDate = selectedDate.toISOString().slice(0, 16);
+        
+        this.expenseForm.patchValue({
+            date: formattedDate,
+            isRecurring: false,
+            isShared: false
+        });
+        
+        if (this.quickExpenseModal) {
+            this.quickExpenseModal.open();
+        }
+    }
+
+    showEventDetails(eventInfo: any) {
+        this.selectedEvent = eventInfo.event;
+        
+        if (this.eventDetailsModal) {
+            this.eventDetailsModal.open();
+        }
+    }
+
+    editExpenseFromCalendar() {
+        if (!this.selectedEvent || this.selectedEvent.extendedProps?.type !== 'expense') {
+            return;
+        }
+
+        const expense = this.expenses.find(e => e.id === this.selectedEvent.extendedProps.originalId);
+        if (!expense) return;
+
+        this.expenseForm.patchValue({
+            description: expense.description,
+            amount: expense.amount,
+            categoryId: expense.category?.id,
+            date: new Date(expense.date).toISOString().slice(0, 16),
+            isRecurring: expense.isRecurring,
+            recurringFrequency: expense.recurringFrequency,
+            isShared: expense.isShared,
+            notes: expense.notes
+        });
+
+        if (this.eventDetailsModal) {
+            this.eventDetailsModal.close();
+        }
+        
+        if (this.quickExpenseModal) {
+            this.quickExpenseModal.open();
+        }
+    }
+
+    async deleteExpenseFromCalendar() {
+        if (!this.selectedEvent || this.selectedEvent.extendedProps?.type !== 'expense') {
+            return;
+        }
+
+        const alertOptions = {
+            title: 'Delete Expense',
+            text: 'Are you sure you want to delete this expense?',
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+        };
+
+        const isConfirmed = await this.alertService.confirmDialog(alertOptions);
+
+        if (isConfirmed) {
+            this.expenseService.deleteExpense(this.selectedEvent.extendedProps.originalId).subscribe({
+                next: (response) => {
+                    if (response.status === 200) {
+                        this.alertService.sweetAlertIt('Expense deleted successfully!', 'Success!');
+                        this.loadExpenses(); // Refresh calendar
+                        if (this.eventDetailsModal) {
+                            this.eventDetailsModal.close();
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error('Error deleting expense:', error);
+                    this.alertService.sweetAlertIt('Error deleting expense', 'Error!', 'error');
+                }
+            });
+        }
+    }
+
+    saveExpense() {
+        if (this.expenseForm.invalid) {
+            this.alertService.sweetAlertIt('Please fill in all required fields!', 'Attention!', 'warning');
+            return;
+        }
+
+        const user = this.authService.getUserData();
+        if (!user?.id) {
+            this.alertService.sweetAlertIt('User not found. Please login again.', 'Error!', 'error');
+            return;
+        }
+
+        const formValue = this.expenseForm.value;
+        
+        if (this.selectedEvent && this.selectedEvent.extendedProps?.type === 'expense') {
+            // Update existing expense
+            const updateCommand: UpdateExpenseCommand = {
+                id: this.selectedEvent.extendedProps.originalId,
+                userId: user.id,
+                description: formValue.description,
+                amount: formValue.amount,
+                date: formValue.date,
+                categoryId: formValue.categoryId,
+                isRecurring: formValue.isRecurring,
+                recurringFrequency: formValue.isRecurring ? formValue.recurringFrequency : '',
+                isShared: formValue.isShared,
+                notes: formValue.notes
+            };
+
+            this.expenseService.updateExpense(this.selectedEvent.extendedProps.originalId, updateCommand).subscribe({
+                next: (response) => {
+                    if (response.status === 200) {
+                        this.showMessage('Expense updated successfully!');
+                        this.loadExpenses();
+                        if (this.quickExpenseModal) {
+                            this.quickExpenseModal.close();
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error('Error updating expense:', error);
+                    this.alertService.sweetAlertIt('Error updating expense', 'Error!', 'error');
+                }
+            });
+        } else {
+            // Create new expense
+            const createCommand: CreateExpenseCommand = {
+                userId: user.id,
+                description: formValue.description,
+                amount: formValue.amount,
+                date: formValue.date,
+                categoryId: formValue.categoryId,
+                isRecurring: formValue.isRecurring,
+                recurringFrequency: formValue.isRecurring ? formValue.recurringFrequency : '',
+                isShared: formValue.isShared,
+                notes: formValue.notes
+            };
+
+            this.expenseService.createExpense(createCommand).subscribe({
+                next: (response) => {
+                    if (response.status === 200 || response.status === 201) {
+                        this.showMessage('Expense added successfully!');
+                        this.loadExpenses();
+                        if (this.quickExpenseModal) {
+                            this.quickExpenseModal.close();
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error('Error creating expense:', error);
+                    this.alertService.sweetAlertIt('Error creating expense', 'Error!', 'error');
+                }
+            });
+        }
+    }
+
+    getEventTypeClass(type: string): string {
+        switch (type) {
+            case 'expense':
+                return 'badge-outline-primary';
+            case 'budget':
+                return 'badge-outline-success';
+            case 'goal':
+                return 'badge-outline-warning';
+            default:
+                return 'badge-outline-secondary';
+        }
+    }
+
+    getEventTypeLabel(type: string): string {
+        switch (type) {
+            case 'expense':
+                return 'Expense';
+            case 'budget':
+                return 'Budget';
+            case 'goal':
+                return 'Goal';
+            default:
+                return 'Event';
         }
     }
 

@@ -1,0 +1,117 @@
+<div>
+  <!-- Quick Actions -->
+  <div class="mb-6 panel">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h5 class="text-lg font-semibold dark:text-white-light">Notifications</h5>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" (click)="toggleShowUnread()" class="btn" [ngClass]="showUnreadOnly ? 'btn-primary' : 'btn-outline-primary'">
+          <icon-bell class="ltr:mr-2 rtl:ml-2" /> {{ showUnreadOnly ? 'Show All' : 'Unread Only' }}
+        </button>
+        <button type="button" (click)="markAllAsRead()" class="btn btn-success" [disabled]="unreadCount === 0">
+          <icon-checks class="ltr:mr-2 rtl:ml-2" /> Mark All Read
+        </button>
+        <button type="button" (click)="refreshNotifications()" class="btn btn-info">
+          <icon-refresh class="ltr:mr-2 rtl:ml-2" /> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="panel">
+    <div class="mb-5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <h5 class="text-lg font-semibold dark:text-white-light">
+          {{ showUnreadOnly ? 'Unread' : 'All' }} Notifications
+        </h5>
+        <span class="badge badge-outline-primary" *ngIf="unreadCount > 0">
+          {{ unreadCount }} unread
+        </span>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="flex justify-center py-8">
+      <span class="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-black !border-l-transparent dark:border-white"></span>
+    </div>
+
+    <div *ngIf="!loading && notifications.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+      <icon-bell class="mx-auto h-12 w-12 mb-4 text-gray-300 dark:text-gray-600" />
+      <p>{{ showUnreadOnly ? 'No unread notifications' : 'No notifications found' }}</p>
+    </div>
+
+    <div *ngIf="!loading && notifications.length > 0" class="space-y-1">
+      <div 
+        *ngFor="let notification of notifications" 
+        class="group flex items-start gap-3 rounded-lg p-4 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+        [ngClass]="{'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-primary': !notification.isRead}"
+      >
+        <!-- Notification Icon -->
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" 
+             [ngClass]="getNotificationIconClass(notification.type)">
+          <ng-container [ngSwitch]="notification.type">
+            <icon-credit-card *ngSwitchCase="'expense'" class="h-5 w-5" />
+            <icon-minus *ngSwitchCase="'budget'" class="h-5 w-5" />
+            <icon-minus *ngSwitchCase="'goal'" class="h-5 w-5" />
+            <icon-bell *ngSwitchCase="'reminder'" class="h-5 w-5" />
+            <icon-minus *ngSwitchCase="'warning'" class="h-5 w-5" />
+            <icon-minus *ngSwitchCase="'success'" class="h-5 w-5" />
+            <icon-info-circle *ngSwitchDefault class="h-5 w-5" />
+          </ng-container>
+        </div>
+
+        <!-- Notification Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <h6 class="font-semibold text-gray-900 dark:text-white" 
+                  [ngClass]="{'text-primary': !notification.isRead}">
+                {{ notification.title }}
+              </h6>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                {{ notification.message }}
+              </p>
+              <div class="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                <span>{{ notification.createdAt | date: 'MMM dd, yyyy' }}</span>
+                <span>•</span>
+                <span>{{ notification.createdAt | date: 'HH:mm' }}</span>
+                <span *ngIf="!notification.isRead" class="flex items-center gap-1 text-primary">
+                  <div class="h-2 w-2 rounded-full bg-primary"></div>
+                  New
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                *ngIf="!notification.isRead"
+                type="button" 
+                (click)="markAsRead(notification.id)" 
+                class="btn btn-sm btn-outline-success w-8 h-8 p-0 rounded-full"
+                title="Mark as read"
+              >
+                <icon-check class="h-3 w-3" />
+              </button>
+              <button 
+                type="button" 
+                (click)="deleteNotification(notification.id)" 
+                class="btn btn-sm btn-outline-danger w-8 h-8 p-0 rounded-full"
+                title="Delete notification"
+              >
+                <icon-trash class="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load More Button -->
+    <div *ngIf="!loading && notifications.length > 0 && hasMore" class="mt-6 text-center">
+      <button type="button" (click)="loadMore()" class="btn btn-outline-primary" [disabled]="loadingMore">
+        <icon-minus class="ltr:mr-2 rtl:ml-2" />
+        {{ loadingMore ? 'Loading...' : 'Load More' }}
+      </button>
+    </div>
+  </div>
+</div>

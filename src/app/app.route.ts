@@ -28,16 +28,16 @@ export const routes: Routes = [
             { path: 'apps/calendar', loadChildren: () => import('./apps/apps.module').then((d) => d.AppsModule) },
 
             // Categories Management
-            // { path: 'categories', loadChildren: () => import('./categories/categories.module').then((d) => d.CategoriesModule) },
+            { path: 'categories', loadChildren: () => import('./categories/categories.module').then((d) => d.CategoriesModule) },
 
             // Budgets Management
-            // { path: 'budgets', loadChildren: () => import('./budgets/budgets.module').then((d) => d.BudgetsModule) },
+            { path: 'budgets', loadChildren: () => import('./budget/budget.module').then((d) => d.BudgetsModule) },
 
             // Financial Goals Management
-            // { path: 'financial-goals', loadChildren: () => import('./financial-goals/financial-goals.module').then((d) => d.FinancialGoalsModule) },
+            { path: 'financial-goals', loadChildren: () => import('./financial-goals/financial-goals.module').then((d) => d.FinancialGoalsModule) },
 
             // Notifications
-            // { path: 'notifications', loadChildren: () => import('./notifications/notifications.module').then((d) => d.NotificationsModule) },
+            { path: 'notifications', loadChildren: () => import('./notifications/notifications.module').then((d) => d.NotificationsModule) },
 
             // Reports & Analytics
             // { path: 'reports', loadChildren: () => import('./reports/reports.module').then((d) => d.ReportsModule) },
@@ -46,7 +46,7 @@ export const routes: Routes = [
             // { path: 'settings', loadChildren: () => import('./settings/settings.module').then((d) => d.SettingsModule) },
 
             // Profile Management
-            // { path: 'profile', loadChildren: () => import('./profile/profile.module').then((d) => d.ProfileModule) },
+            { path: 'profile', loadChildren: () => import('./profile/profile.module').then((d) => d.ProfileModule) },
         ],
     },
 

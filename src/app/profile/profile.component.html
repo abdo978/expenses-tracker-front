@@ -1,0 +1,253 @@
+<div>
+  <!-- Profile Header -->
+  <div class="mb-6 panel">
+    <div class="flex flex-col items-center gap-4 md:flex-row">
+      <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary dark:text-white-light">
+        <icon-minus class="h-10 w-10" />
+      </div>
+      <div class="text-center md:text-left">
+        <h3 class="text-xl font-semibold dark:text-white-light">
+          {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400">{{ currentUser?.email }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-500">&#64;{{ currentUser?.userName }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Information -->
+  <div class="mb-6 panel">
+    <div class="mb-5 flex items-center justify-between">
+      <h5 class="text-lg font-semibold dark:text-white-light">Account Information</h5>
+      <button type="button" (click)="editAccountInfo()" class="btn btn-primary">
+        <icon-edit class="ltr:mr-2 rtl:ml-2" /> Edit Profile
+      </button>
+    </div>
+    
+    <div class="grid gap-6 sm:grid-cols-2">
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
+        <div class="mt-1 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          {{ currentUser?.firstName || 'Not provided' }}
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+        <div class="mt-1 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          {{ currentUser?.lastName || 'Not provided' }}
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+        <div class="mt-1 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          {{ currentUser?.email || 'Not provided' }}
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+        <div class="mt-1 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          {{ currentUser?.userName || 'Not provided' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Preferences -->
+  <div class="mb-6 panel">
+    <div class="mb-5 flex items-center justify-between">
+      <h5 class="text-lg font-semibold dark:text-white-light">Preferences</h5>
+      <button type="button" (click)="editPreferences()" class="btn btn-success">
+        <icon-settings class="ltr:mr-2 rtl:ml-2" /> Edit Preferences
+      </button>
+    </div>
+    
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
+        <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          <icon-dollar-sign class="h-4 w-4 text-primary" />
+          {{ userPreferences?.currency || 'USD' }}
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
+        <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          <icon-globe class="h-4 w-4 text-primary" />
+          English (en)
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</label>
+        <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          <icon-moon class="h-4 w-4 text-primary" />
+          Dark Mode
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Email Notifications</label>
+        <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          <icon-mail class="h-4 w-4" [ngClass]="userPreferences?.emailNotifications ? 'text-success' : 'text-danger'" />
+          <span [ngClass]="userPreferences?.emailNotifications ? 'text-success' : 'text-danger'">
+            {{ userPreferences?.emailNotifications ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+      </div>
+      
+      <div>
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Push Notifications</label>
+        <div class="mt-1 flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+          <icon-bell class="h-4 w-4" [ngClass]="userPreferences?.pushNotifications ? 'text-success' : 'text-danger'" />
+          <span [ngClass]="userPreferences?.pushNotifications ? 'text-success' : 'text-danger'">
+            {{ userPreferences?.pushNotifications ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="panel">
+    <div class="mb-5">
+      <h5 class="text-lg font-semibold dark:text-white-light">Quick Actions</h5>
+    </div>
+    
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <button type="button" (click)="changePassword()" class="btn btn-outline-warning">
+        <icon-lock class="ltr:mr-2 rtl:ml-2" />
+        Change Password
+      </button>
+      
+      <button type="button" (click)="exportData()" class="btn btn-outline-info">
+        <icon-download class="ltr:mr-2 rtl:ml-2" />
+        Export Data
+      </button>
+      
+      <button type="button" (click)="logout()" class="btn btn-outline-danger">
+        <icon-logout class="ltr:mr-2 rtl:ml-2" />
+        Logout
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<ngx-custom-modal #profileModal class="no-footer">
+  <ng-template #modalHeader>
+    <div class="!font-medium">Edit Profile Information</div>
+  </ng-template>
+  <ng-template #modalBody>
+    <form [formGroup]="profileForm" class="text-sm" (submit)="saveProfile()">
+      <div class="mb-5">
+        <label for="firstName">First Name *</label>
+        <input type="text" formControlName="firstName" class="form-input" placeholder="Enter first name"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="lastName">Last Name *</label>
+        <input type="text" formControlName="lastName" class="form-input" placeholder="Enter last name"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="email">Email Address *</label>
+        <input type="email" formControlName="email" class="form-input" placeholder="Enter email address"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="userName">Username *</label>
+        <input type="text" formControlName="userName" class="form-input" placeholder="Enter username"/>
+      </div>
+
+      <div class="mt-8 flex items-center justify-end ltr:text-right rtl:text-left">
+        <button type="button" class="btn btn-outline-danger" (click)="profileModal.close()">Cancel</button>
+        <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4" [disabled]="profileForm.invalid">
+          Update Profile
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</ngx-custom-modal>
+
+<!-- Edit Preferences Modal -->
+<ngx-custom-modal #preferencesModal class="no-footer">
+  <ng-template #modalHeader>
+    <div class="!font-medium">Edit Preferences</div>
+  </ng-template>
+  <ng-template #modalBody>
+    <form [formGroup]="preferencesForm" class="text-sm" (submit)="savePreferences()">
+      <div class="mb-5">
+        <label for="currency">Currency</label>
+        <ng-select 
+          [items]="currencyOptions" 
+          bindLabel="label" 
+          bindValue="value"
+          formControlName="currency"
+          [searchable]="true" 
+          [clearable]="false" 
+          class="custom-multiselect"
+          placeholder="Select Currency"
+        ></ng-select>
+      </div>
+
+      <div class="mb-5">
+        <label class="inline-flex">
+          <input type="checkbox" formControlName="emailNotifications" class="form-checkbox" />
+          <span class="text-white-dark">Enable Email Notifications</span>
+        </label>
+        <small class="block text-gray-500 mt-1">Receive notifications about budgets, goals, and expenses via email</small>
+      </div>
+
+      <div class="mb-5">
+        <label class="inline-flex">
+          <input type="checkbox" formControlName="pushNotifications" class="form-checkbox" />
+          <span class="text-white-dark">Enable Push Notifications</span>
+        </label>
+        <small class="block text-gray-500 mt-1">Receive real-time notifications in the browser</small>
+      </div>
+
+      <div class="mt-8 flex items-center justify-end ltr:text-right rtl:text-left">
+        <button type="button" class="btn btn-outline-danger" (click)="preferencesModal.close()">Cancel</button>
+        <button type="submit" class="btn btn-success ltr:ml-4 rtl:mr-4" [disabled]="preferencesForm.invalid">
+          Update Preferences
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</ngx-custom-modal>
+
+<!-- Change Password Modal -->
+<ngx-custom-modal #passwordModal class="no-footer">
+  <ng-template #modalHeader>
+    <div class="!font-medium">Change Password</div>
+  </ng-template>
+  <ng-template #modalBody>
+    <form [formGroup]="passwordForm" class="text-sm" (submit)="changePasswordSubmit()">
+      <div class="mb-5">
+        <label for="currentPassword">Current Password *</label>
+        <input type="password" formControlName="currentPassword" class="form-input" placeholder="Enter current password"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="newPassword">New Password *</label>
+        <input type="password" formControlName="newPassword" class="form-input" placeholder="Enter new password"/>
+      </div>
+
+      <div class="mb-5">
+        <label for="confirmPassword">Confirm New Password *</label>
+        <input type="password" formControlName="confirmPassword" class="form-input" placeholder="Confirm new password"/>
+      </div>
+
+      <div class="mt-8 flex items-center justify-end ltr:text-right rtl:text-left">
+        <button type="button" class="btn btn-outline-danger" (click)="passwordModal.close()">Cancel</button>
+        <button type="submit" class="btn btn-warning ltr:ml-4 rtl:mr-4" [disabled]="passwordForm.invalid">
+          Change Password
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</ngx-custom-modal>
