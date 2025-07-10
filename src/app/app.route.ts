@@ -42,8 +42,8 @@ export const routes: Routes = [
             // Reports & Analytics
             // { path: 'reports', loadChildren: () => import('./reports/reports.module').then((d) => d.ReportsModule) },
 
-            // User Settings & Preferences
-            // { path: 'settings', loadChildren: () => import('./settings/settings.module').then((d) => d.SettingsModule) },
+            // Ai Assistant
+            { path: 'ai-assistant', loadChildren: () => import('./ai-assistant/ai-assistant.module').then((d) => d.AIAssistantModule) },
 
             // Profile Management
             { path: 'profile', loadChildren: () => import('./profile/profile.module').then((d) => d.ProfileModule) },

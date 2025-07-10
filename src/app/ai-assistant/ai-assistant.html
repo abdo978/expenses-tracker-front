@@ -1,0 +1,193 @@
+<div>
+  <!-- AI Assistant Header -->
+  <div class="mb-6 panel">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h3 class="text-xl font-semibold dark:text-white-light">
+          <icon-minus class="inline ltr:mr-2 rtl:ml-2" />
+          AI Financial Assistant
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          Ask questions about your expenses, budgets, and financial goals
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" (click)="clearChat()" class="btn btn-outline-warning" [disabled]="messages.length === 0">
+          <icon-refresh class="ltr:mr-2 rtl:ml-2" />
+          Clear Chat
+        </button>
+        <button type="button" (click)="toggleContext()" class="btn" [ngClass]="includeContext ? 'btn-success' : 'btn-outline-success'">
+          <icon-minus class="ltr:mr-2 rtl:ml-2" />
+          {{ includeContext ? 'Context On' : 'Context Off' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="mb-6 panel">
+    <div class="mb-4">
+      <h5 class="text-lg font-semibold dark:text-white-light">Quick Questions</h5>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Click on any question to get started</p>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <button 
+        *ngFor="let question of quickQuestions" 
+        type="button" 
+        (click)="askQuickQuestion(question.prompt)"
+        class="btn btn-outline-primary text-left p-3 h-auto"
+        [disabled]="isProcessing"
+      >
+        <div class="text-sm font-medium">{{ question.title }}</div>
+        <div class="text-xs text-gray-500 mt-1">{{ question.description }}</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chat Interface -->
+  <div class="panel">
+    <div class="mb-5">
+      <h5 class="text-lg font-semibold dark:text-white-light">Chat with AI Assistant</h5>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="mb-5">
+      <div class="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div *ngIf="messages.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+          <icon-chat-dots class="mx-auto h-12 w-12 mb-4 text-gray-300 dark:text-gray-600" />
+          <p>Start a conversation with your AI assistant</p>
+          <p class="text-sm">Ask about your expenses, budgets, or financial goals</p>
+        </div>
+
+        <div class="space-y-4" *ngIf="messages.length > 0">
+          <div 
+            *ngFor="let message of messages" 
+            class="flex"
+            [ngClass]="message.type === 'user' ? 'justify-end' : 'justify-start'"
+          >
+            <div 
+              class="max-w-xs rounded-lg px-4 py-2 lg:max-w-md"
+              [ngClass]="message.type === 'user' 
+                ? 'bg-primary text-white' 
+                : 'bg-white border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
+            >
+              <div class="flex items-start gap-2">
+                <div class="flex-shrink-0 mt-1">
+                  <icon-user *ngIf="message.type === 'user'" class="h-4 w-4" />
+                  <icon-minus *ngIf="message.type === 'ai'" class="h-4 w-4 text-primary" />
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-medium mb-1">
+                    {{ message.type === 'user' ? 'You' : 'AI Assistant' }}
+                  </div>
+                  <div class="text-sm whitespace-pre-wrap">{{ message.content }}</div>
+                  <div class="text-xs opacity-75 mt-1">{{ message.timestamp | date: 'HH:mm' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading indicator -->
+          <div *ngIf="isProcessing" class="flex justify-start">
+            <div class="max-w-xs rounded-lg px-4 py-2 bg-white border border-gray-300 dark:bg-gray-700 dark:border-gray-600">
+              <div class="flex items-center gap-2">
+                <icon-minus class="h-4 w-4 text-primary" />
+                <div class="flex space-x-1">
+                  <div class="h-2 w-2 bg-primary rounded-full animate-pulse"></div>
+                  <div class="h-2 w-2 bg-primary rounded-full animate-pulse" style="animation-delay: 0.1s"></div>
+                  <div class="h-2 w-2 bg-primary rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                </div>
+                <span class="text-sm text-gray-600 dark:text-gray-400">AI is thinking...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Form -->
+    <form [formGroup]="chatForm" (submit)="sendMessage()" class="space-y-3">
+      <div class="flex gap-2">
+        <input 
+          type="text" 
+          formControlName="prompt"
+          class="form-input flex-1" 
+          placeholder="Ask about your expenses, budgets, or financial goals..."
+          [disabled]="isProcessing"
+          (keydown.enter)="sendMessage()"
+        />
+        <button 
+          type="submit" 
+          class="btn btn-primary px-4"
+          [disabled]="chatForm.invalid || isProcessing"
+        >
+          <icon-send class="h-4 w-4" />
+        </button>
+      </div>
+      
+      <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center gap-4">
+          <label class="inline-flex items-center">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="includeContext" 
+              class="form-checkbox" 
+            />
+            <span class="ltr:ml-2 rtl:mr-2 text-gray-600 dark:text-gray-400">
+              Include financial data context
+            </span>
+          </label>
+          <label class="inline-flex items-center">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="ignoreHistory" 
+              class="form-checkbox" 
+            />
+            <span class="ltr:ml-2 rtl:mr-2 text-gray-600 dark:text-gray-400">
+              Ignore conversation history
+            </span>
+          </label>
+        </div>
+        <div class="text-gray-500 dark:text-gray-400">
+          {{ chatForm.get('prompt')?.value?.length || 0 }}/500
+        </div>
+      </div>
+    </form>
+
+    <!-- Context Information -->
+    <div *ngIf="includeContext" class="mt-4 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+      <div class="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+        <icon-info-circle class="h-4 w-4" />
+        <span class="font-medium">Context Mode Active</span>
+      </div>
+      <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
+        AI will have access to your recent expenses, budgets, and financial goals for more personalized responses.
+      </p>
+    </div>
+  </div>
+
+  <!-- AI Tips -->
+  <div class="mt-6 panel">
+    <div class="mb-4">
+      <h5 class="text-lg font-semibold dark:text-white-light">💡 Tips for Better Results</h5>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+        <div class="font-medium text-green-600 dark:text-green-400">✅ Good Questions</div>
+        <ul class="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <li>• "How much did I spend on food this month?"</li>
+          <li>• "Am I on track with my savings goal?"</li>
+          <li>• "What's my biggest expense category?"</li>
+        </ul>
+      </div>
+      <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+        <div class="font-medium text-orange-600 dark:text-orange-400">💡 Pro Tips</div>
+        <ul class="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <li>• Be specific about time periods</li>
+          <li>• Enable context for personalized advice</li>
+          <li>• Ask for budget recommendations</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
